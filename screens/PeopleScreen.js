@@ -122,7 +122,7 @@ export const PeopleScreen = ({navigation}) => {
 };
 
 
-export const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   containerPeople: {
     flex: 1,
     paddingHorizontal: 10,
@@ -144,7 +144,7 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 3.88,
     elevation: 6,
   },
@@ -178,13 +178,16 @@ export const styles = StyleSheet.create({
     bottom: 30,
     right: 30,
     borderRadius: 30,
-    backgroundColor: "deepskyblue",
+    backgroundColor: "#007FFF",
     alignItems: "center",
     justifyContent: "center",
     height: 60,
     width: 60,
     elevation: 5,
   },
+
+
+  //Pop up modal styles:
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -233,3 +236,5 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
+export default PeopleScreen;

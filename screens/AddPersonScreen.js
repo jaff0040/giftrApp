@@ -1,16 +1,6 @@
 import React, {useContext, useState} from "react";
-import {
-	Keyboard,
-	KeyboardAvoidingView,
-	Platform,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	TouchableWithoutFeedback,
-	View,
-	StyleSheet,
-	Modal
-} from "react-native";
+import CustomModal from '../components/CustomModal'; // Import CustomModal
+import {Text, TextInput, Keyboard, KeyboardAvoidingView, Platform, TouchableOpacity, TouchableWithoutFeedback, View, StyleSheet} from "react-native";
 import DatePicker from "react-native-modern-datepicker";
 import {GlobalContext} from "GlobalContext";
 
@@ -19,14 +9,13 @@ export const AddPersonScreen = ({navigation}) => {
 	const [name, setName] = useState("");
 	const [date, setDate] = useState("");
 	const [modalVisible, setModalVisible] = useState(false);
-	const [modalMessage, setModalMessage] = useState(""); // Store error message
+	const [modalMessage, setModalMessage] = useState("");
 
 	const savePerson = (name, date, addPerson, navigation) => {
 		if (name && date) {
 			const [year, month, day] = date.split("/");
 			const formattedDate = `${year}-${month}-${day}`;
 			const currentDate = new Date(formattedDate);
-
 			if (!isNaN(currentDate.getTime())) {
 				addPerson(name, currentDate.toISOString());
 				navigation.navigate("PeopleScreen");
@@ -35,68 +24,38 @@ export const AddPersonScreen = ({navigation}) => {
 				setModalVisible(true); 
 			}
 		} else {
-			setModalMessage("Please fill all fields.");
+			setModalMessage("Please fill all fields!");
 			setModalVisible(true); 
 		}
 	};
 
 	return (
-		<KeyboardAvoidingView
-			style={styles.containerAddPerson}
-			behavior={Platform.OS === "ios" ? "padding" : "height"}>
+		<KeyboardAvoidingView style={styles.containerAddPerson} behavior={Platform.OS === "ios" ? "padding" : "height"}>
 			<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 				<View style={styles.viewAddPerson}>
 					<Text style={styles.labelAddPerson}>Person Name:</Text>
-					<TextInput
-						style={styles.inputAddPerson}
-						placeholder="Type the name"
-						value={name}
-						onChangeText={setName}
-					/>
+					<TextInput style={styles.inputAddPerson} placeholder="Type the name" value={name} onChangeText={setName} />
 
 					<Text style={styles.labelAddPerson}>Date of Birth:</Text>
-					<DatePicker
-						mode="calendar"
-						onDateChange={setDate}
-						style={styles.datePickerAddPerson}
-					/>
+					<DatePicker mode="calendar" onDateChange={setDate} style={styles.datePickerAddPerson} />
 
-					<TouchableOpacity
-						style={styles.buttonAddIdea}
-						onPress={() => savePerson(name, date, addPerson, navigation)}>
+					<TouchableOpacity style={styles.buttonAddIdea} onPress={() => savePerson(name, date, addPerson, navigation)}>
 						<Text style={styles.buttonTextAddIdea}>Save</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity
-						style={styles.deleteButtonIdea}
-						onPress={() => navigation.navigate("PeopleScreen")}>
+					<TouchableOpacity style={styles.deleteButtonIdea} onPress={() => navigation.navigate("PeopleScreen")}>
 						<Text style={styles.deleteButtonTextIdea}>Cancel</Text>
 					</TouchableOpacity>
 
 					{/* Custom Modal for Validation Messages */}
-					<Modal
-						transparent={true}
-						animationType="fade"
-						visible={modalVisible}
-						onRequestClose={() => setModalVisible(false)}
-					>
-						<View style={styles.modalOverlay}>
-							<View style={styles.modalContainer}>
-								<Text style={styles.modalTitle}>Validation Error</Text>
-								<Text style={styles.modalMessage}>{modalMessage}</Text>
-								<TouchableOpacity
-									style={styles.modalButton}
-									onPress={() => setModalVisible(false)}>
-									<Text style={styles.modalButtonText}>OK</Text>
-								</TouchableOpacity>
-							</View>
-						</View>
-					</Modal>
+					<CustomModal visible={modalVisible} message={modalMessage} onClose={() => setModalVisible(false)} />
 				</View>
 			</TouchableWithoutFeedback>
 		</KeyboardAvoidingView>
 	);
 };
+
+
 
 export const styles = StyleSheet.create({
 	viewAddPerson: {

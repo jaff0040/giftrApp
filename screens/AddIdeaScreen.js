@@ -1,201 +1,133 @@
-import React, { useContext, useState, useRef, useEffect } from "react";
-import {
-    Image,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
-    StyleSheet,
-    Modal,
-    Dimensions
-} from "react-native";
-import { Camera } from "expo-camera";
-import * as ImagePicker from "expo-image-picker";
-import { GlobalContext } from "GlobalContext"; 
+import React, { useContext, useRef, useState } from "react";
+import { GlobalContext } from "GlobalContext";
+import CustomModal from '../components/CustomModal';  // Import CustomModal
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, StyleSheet, Button, Image, Keyboard, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
+
+// Helper functions
+export const takePicture = async (cameraRef, setImage, setPictureSize) => {
+	if (cameraRef.current) {
+		try {
+			const sizes = await cameraRef.current.getAvailablePictureSizesAsync();
+			if (sizes && sizes.length > 0) {
+				const chosenSize = sizes[sizes.length - 1];
+				setPictureSize(chosenSize);
+				let result = await cameraRef.current.takePictureAsync({
+					quality: 1,
+					aspect: [2, 3],
+				});
+				setImage(result.uri);
+			}
+		} catch (error) {
+			console.error("Error capturing picture: ", error);
+		}
+	}
+};
+
+export const flipCamera = (facing, setFacing) => {
+	if (facing === "back") setFacing("front");
+	else setFacing("back");
+};
 
 export const AddIdeaScreen = ({ route, navigation }) => {
-    const { personId } = route.params;
-    const { addIdea } = useContext(GlobalContext); 
-    const [text, setText] = useState("");
-    const [image, setImage] = useState(null);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalMessage, setModalMessage] = useState(""); 
-    const [availableSizes, setAvailableSizes] = useState([]); 
-
-    const cameraRef = useRef(null);  
-
-    // Request Camera permission and get available picture sizes
-	const takePicture = async (setImage) => {
-		const { status } = await Camera.requestCameraPermissionsAsync();
-	
-		if (status === "granted") {
-			if (cameraRef.current) {
-				// Get available picture sizes from the camera
-				const sizes = await cameraRef.current.getAvailablePictureSizesAsync("4:3");
-				setAvailableSizes(sizes);
-				console.log("Available Sizes:", sizes);
-	
-				// Select the largest available size or fallback to default if empty
-				const selectedSize = sizes.length > 0 ? sizes[sizes.length - 1] : null;
-	
-				if (selectedSize) {
-					console.log(`Selected size for image capture: ${selectedSize}`);
-					// Adjust the camera settings here based on the selected size if necessary.
-				}
-			}
-	
-			let result = await ImagePicker.launchCameraAsync({
-				mediaTypes: ImagePicker.MediaTypeOptions.Images,
-				allowsEditing: true,
-				aspect: [2, 3],  // Aspect ratio 2:3
-				quality: 1,
-			});
-	
-			if (!result.canceled && result.assets[0].uri) {
-				setImage(result.assets[0].uri);
-			} else {
-				setModalMessage("Image capturing was unsuccessful.");
-				setModalVisible(true); 
-			}
-		} else {
-			setModalMessage("Camera permission is required.");
-			setModalVisible(true); // Show modal for camera permission
-		}
-	};
-	
-	
-
-    // Save the idea
-    const saveIdea = (text, image, personId, addIdea, navigation) => {
-        if (text && image) {
-            const screenWidth = Dimensions.get("window").width;
-            const imageWidth = screenWidth * 0.6; // 60% of the screen width
-            const aspectRatio = 2 / 3;
-            const imageHeight = imageWidth * aspectRatio;
-
-            addIdea(personId, text, image, imageWidth, imageHeight);
-            navigation.navigate("IdeaScreen", { personId });
-        } else {
-            setModalMessage("Please provide both text & image!");
-            setModalVisible(true); 
-        }
-    };
-
-
+	const { personId } = route.params;
+	const { saveIdea } = useContext(GlobalContext); 
+	const [text, setText] = useState("");
+	const [image, setImage] = useState(null);
+	const [permission, requestPermission] = useCameraPermissions();
+	const [showModal, setShowModal] = useState(false);
+	const [modalMessage, setModalMessage] = useState("");
+	const [pictureSize, setPictureSize] = useState(null);
+	const cameraRef = useRef(null);
+	const [facing, setFacing] = useState("back");
 	const screenWidth = Dimensions.get("window").width;
-    const imageWidth = screenWidth * 0.6; // 60% of screen width
-    const aspectRatio = 2 / 3;
-    const imageHeight = imageWidth * aspectRatio;
+	const imageWidth = screenWidth * 0.6; 
+	const aspectRatio = 2 / 3;
+	const imageHeight = imageWidth * aspectRatio;
 
-    return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.containerAddIdea}
-        >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={styles.viewAddIdea}>
-                    <Text style={styles.titleAddIdea}>Add a Gift Idea</Text>
-                    <TextInput
-                        style={styles.inputAddIdea}
-                        placeholder="Gift Idea"
-                        value={text}
-                        onChangeText={setText}
-                    />
-                    {image && (
-                        <Image
-                            source={{ uri: image }}
-                            style={{
-                                ...styles.imageAddIdea,
-                                width: imageWidth,
-                                height: imageHeight,
-                            }}
-                        />
-                    )}
+	if (!permission) return <View />;
+	if (!permission.granted) {
+		return (
+			<View style={styles.container}>
+				<Text style={styles.message}>Camera permission is required.</Text>
+				<Button onPress={requestPermission} title="Grant permission" />
+			</View>
+		);
+	}
 
-                    {/* Take Picture button */}
-                    <TouchableOpacity
-                        style={[styles.buttonAddIdea, { backgroundColor: "green" }]}
-                        onPress={() => takePicture(setImage)}
-                    >
-                        <Text style={styles.buttonTextAddIdea}>Take Picture</Text>
-                    </TouchableOpacity>
+	return (
+		<>
+			<KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.containerAddIdea}>
+				<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+					<View style={styles.viewAddIdea}>
+						<Text style={styles.titleAddIdea}>Add a Gift Idea</Text>
+						<TextInput style={styles.inputAddIdea} placeholder="Gift Idea" value={text} onChangeText={setText} />
+						{image ? (
+							<Image source={{ uri: image }} style={[styles.imageAddIdea, { width: imageWidth, height: imageHeight, marginBottom: 33 }]} />
+						) : (
+							<View style={styles.cameraContainer}>
+								<CameraView style={styles.camera} facing={facing} ref={cameraRef}>
+									<View style={styles.buttonContainerCam}>
+										<TouchableOpacity style={styles.buttonCam} onPress={() => takePicture(cameraRef, setImage, setPictureSize)}>
+											<Text style={styles.modalButtonText}>Take Picture</Text>
+										</TouchableOpacity>
+										<TouchableOpacity style={styles.buttonCam} onPress={() => flipCamera(facing, setFacing)}>
+											<Text style={styles.modalButtonText}>Flip Camera</Text>
+										</TouchableOpacity>
+									</View>
+								</CameraView>
+							</View>
+						)}
+						<TouchableOpacity style={styles.buttonAddIdea} onPress={() => saveIdea(personId, text, image, imageWidth, imageHeight, navigation, setShowModal, setModalMessage)}>
+							<Text style={styles.buttonTextAddIdea}>Save</Text>
+						</TouchableOpacity>
+						<TouchableOpacity style={[styles.buttonAddIdea, { backgroundColor: '#FF0000' }]} onPress={() => navigation.navigate("IdeaScreen", { personId })}>
+							<Text style={styles.buttonTextAddIdea}>Cancel</Text>
+						</TouchableOpacity>
 
-                    {/* Save button */}
-                    <TouchableOpacity
-                        style={[styles.buttonAddIdea, { backgroundColor: "#007BFF" }]}
-                        onPress={() => saveIdea(text, image, personId, addIdea, navigation)}
-                    >
-                        <Text style={styles.buttonTextAddIdea}>Save</Text>
-                    </TouchableOpacity>
-
-                    {/* Cancel button */}
-                    <TouchableOpacity
-                        style={[styles.buttonAddIdea, { backgroundColor: "red" }]}
-                        onPress={() => navigation.navigate("IdeaScreen", { personId })}
-                    >
-                        <Text style={styles.buttonTextAddIdea}>Cancel</Text>
-                    </TouchableOpacity>
-
-                    {/* Custom Modal for Validation Messages */}
-                    <Modal
-                        transparent={true}
-                        animationType="fade"
-                        visible={modalVisible}
-                        onRequestClose={() => setModalVisible(false)}
-                    >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalContainer}>
-                                <Text style={styles.modalTitle}>Validation Error</Text>
-                                <Text style={styles.modalMessage}>{modalMessage}</Text>
-                                <TouchableOpacity
-                                    style={styles.modalButton}
-                                    onPress={() => setModalVisible(false)}
-                                >
-                                    <Text style={styles.modalButtonText}>OK</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </Modal>
-                </View>
-            </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
-    );
+						{/* Custom Modal for alerts */}
+						<CustomModal visible={showModal} message={modalMessage} onClose={() => setShowModal(false)} />
+					</View>
+				</TouchableWithoutFeedback>
+			</KeyboardAvoidingView>
+		</>
+	);
 };
+
+
 
 const styles = StyleSheet.create({
     viewAddIdea: {
         flex: 1,
-        padding: 22,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#dcdcdc",
+        padding: 22,
     },
-    containerAddIdea: {
-        flex: 1,
-    },
+
     titleAddIdea: {
+        marginBottom: 22,
+        color: "black",
         fontSize: 24,
         fontWeight: "bold",
-        marginBottom: 35,
-        color: "black",
     },
+    containerAddIdea: {
+		flex: 1
+	},
+
     inputAddIdea: {
-        width: "100%",
-        padding: 15,
-        borderWidth: 1,
         borderColor: "#ccc",
         borderRadius: 8,
         marginBottom: 20,
+        borderWidth:2,
         backgroundColor: "#fff",
+        width: "100%",
+        padding: 14,
+
     },
     imageAddIdea: {
-        marginBottom: 20,
-        borderRadius: 8,
-        resizeMode: "cover",
+        borderRadius: 12,
+		resizeMode: "cover",
     },
     buttonAddIdea: {
         padding: 15,
@@ -203,12 +135,14 @@ const styles = StyleSheet.create({
         width: "100%",
         alignItems: "center",
         marginBottom: 16,
+        backgroundColor: "#007BFF",
     },
     buttonTextAddIdea: {
+        fontWeight: "bold",
         color: "#fff",
         fontSize: 17,
-        fontWeight: "bold",
     },
+
     modalOverlay: {
         flex: 1,
         justifyContent: "center",
@@ -243,6 +177,33 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
     },
+
+	camera: {
+		flex: 1
+	},
+
+	cameraContainer: {
+		width: "100%",
+        flex: 1 / 1,
+		marginBottom: 22,
+	},
+
+	buttonContainerCam: {
+        paddingBottom: 15,
+		gap: 50,
+        flex: 1,
+		flexDirection: "row",
+		display: "flex",
+		alignItems: "flex-end",
+        alignSelf: "center",
+
+	},
+	buttonCam: {
+		borderRadius: 8,
+		paddingHorizontal: 20,
+		paddingVertical: 10,
+		backgroundColor: "#056608"
+	},
 });
 
 export default AddIdeaScreen;

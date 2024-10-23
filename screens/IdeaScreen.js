@@ -1,13 +1,6 @@
 import React, { useContext, useState } from "react";
-import {
-  FlatList,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  Modal,
-} from "react-native";
+import { FlatList, Image, Text, TouchableOpacity, View, StyleSheet } from "react-native";
+import CustomModal from '../components/CustomModal'; // Import CustomModal
 import { GlobalContext } from "../GlobalContext";
 
 export const IdeaScreen = ({ route, navigation }) => {
@@ -17,36 +10,13 @@ export const IdeaScreen = ({ route, navigation }) => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [deleteConfirmationVisible, setDeleteConfirmationVisible] =
-    useState(false);
+  const [deleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
   const [selectedIdeaId, setSelectedIdeaId] = useState(null);
 
   const handleDeleteIdea = () => {
     deleteIdea(personId, selectedIdeaId);
     setDeleteConfirmationVisible(false);
   };
-
-  const renderIdeaItem = ({ item }) => (
-    <View style={styles.ideaContainer}>
-      {item.img && (
-        <TouchableOpacity onPress={() => handleImagePress(item.img)}>
-          <Image source={{ uri: item.img }} style={styles.image} />
-        </TouchableOpacity>
-      )}
-      <View style={styles.textAndDeleteContainer}>
-        <Text style={styles.ideaText}>{item.text}</Text>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => {
-            setSelectedIdeaId(item.id);
-            setDeleteConfirmationVisible(true);
-          }}
-        >
-          <Text style={styles.deleteButtonText}>Delete Idea</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   const handleImagePress = (imgUri) => {
     setSelectedImage(imgUri);
@@ -59,70 +29,51 @@ export const IdeaScreen = ({ route, navigation }) => {
       {person.ideas.length === 0 ? (
         <Text style={styles.emptyText}>No ideas added yet!</Text>
       ) : (
-        <FlatList
-          data={person.ideas}
-          keyExtractor={(item) => item.id}
-          renderItem={renderIdeaItem}
-        />
-      )}
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate("AddIdeaScreen", { personId })}
-      >
-        <Text style={styles.addButtonText}>+</Text>
-      </TouchableOpacity>
-
-      {/* Modal for Full Image View */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <Image source={{ uri: selectedImage }} style={styles.fullImage} />
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setModalVisible(false)}
-          >
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        visible={deleteConfirmationVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setDeleteConfirmationVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Confirm Delete</Text>
-            <Text style={styles.modalMessage}>
-              Are you sure you want to delete this idea?
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={() => setDeleteConfirmationVisible(false)}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
+        <FlatList data={person.ideas} keyExtractor={(item) => item.id} renderItem={({ item }) => (
+          <View style={styles.ideaContainer}>
+            {item.img && (
+              <TouchableOpacity onPress={() => handleImagePress(item.img)}>
+                <Image source={{ uri: item.img }} style={styles.image} />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.deleteButtonModal]}
-                onPress={handleDeleteIdea}
-              >
-                <Text style={styles.buttonText}>Delete</Text>
+            )}
+            <View style={styles.textAndDeleteContainer}>
+              <Text style={styles.ideaText}>{item.text}</Text>
+              <TouchableOpacity style={styles.deleteButton} onPress={() => {
+                setSelectedIdeaId(item.id);
+                setDeleteConfirmationVisible(true);
+              }}>
+                <Text style={styles.deleteButtonText}>Delete Idea</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        )} />
+      )}
+
+      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("AddIdeaScreen", { personId })}>
+        <Text style={styles.addButtonText}>+</Text>
+      </TouchableOpacity>
+
+      {/* Full Image View Modal */}
+      <CustomModal visible={modalVisible} message="Full Image View" onClose={() => setModalVisible(false)} />
+
+      {/* Delete Confirmation Modal */}
+      <CustomModal
+        visible={deleteConfirmationVisible}
+        message="Are you sure you want to delete this idea?"
+        title="Confirm Delete"
+        onClose={() => setDeleteConfirmationVisible(false)}
+        onConfirm={handleDeleteIdea}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </View>
   );
 };
+
+
+
+
+
 
 const styles = StyleSheet.create({
   container: {
