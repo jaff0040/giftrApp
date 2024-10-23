@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
-import { FlatList, Image, Text, TouchableOpacity, View, StyleSheet } from "react-native";
-import CustomModal from '../components/CustomModal'; // Import CustomModal
+import { FlatList, Image, Text, TouchableOpacity, View, Modal, StyleSheet } from "react-native";
+import CustomModal from '../components/CustomModal'; 
 import { GlobalContext } from "../GlobalContext";
 
 export const IdeaScreen = ({ route, navigation }) => {
@@ -55,6 +55,24 @@ export const IdeaScreen = ({ route, navigation }) => {
 
       {/* Full Image View Modal */}
       <CustomModal visible={modalVisible} message="Full Image View" onClose={() => setModalVisible(false)} />
+
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Image source={{ uri: selectedImage }} style={styles.fullImage} />
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setModalVisible(false)}
+          >
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
 
       {/* Delete Confirmation Modal */}
       <CustomModal
